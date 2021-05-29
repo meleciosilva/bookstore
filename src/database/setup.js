@@ -1,7 +1,7 @@
 require("dotenv").config();
 // SET UP MONGOOSE
 const mongoose = require("mongoose");
-const connectionString = "mongodb://localhost:27017/bookstore";
+const connectionString = process.env.DB_URL;
 
 // connect application to database
 module.exports = () => {
