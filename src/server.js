@@ -1,5 +1,6 @@
-const port = 4000;
+require("dotenv").config();
 const app = require("./index");
+const port = process.env.PORT;
 
 // Setup Mongoose
 const dbSetup = require("./database/setup");
