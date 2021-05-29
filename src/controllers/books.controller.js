@@ -8,7 +8,6 @@ function create(req, res, next) {
 }
 
 function list(req, res, next) {
-  console.log(req.query);
   const conditions = {};
   if (req.query) {
     for (let [key, value] of Object.entries(req.query)) {
