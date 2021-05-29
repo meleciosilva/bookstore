@@ -1,8 +1,6 @@
 const User = require("./../models/user");
 const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const secret = "suPErSecuRESEcrEt"
-const expiry = 3600;
+const { createToken } = require("../services/jwtService");
 
 exports.registerNewUser = (req, res, next) => {
   // fetch user's details from request body
@@ -17,33 +15,26 @@ exports.registerNewUser = (req, res, next) => {
     User.create({firstName, lastName, username }, (err, newUser) => {
       if (err) return next(err);
     
-    // hash password
-    bcrypt.genSalt(10, (err, salt) => {
-      if (err) return next(err);
-      bcrypt.hash(password, salt, (err, hashedPassword) => {
+      // hash password
+      bcrypt.genSalt(10, (err, salt) => {
         if (err) return next(err);
-        // save password to database
-        newUser.password = hashedPassword;
-        newUser.save((err, savedUser) => {
+        
+        bcrypt.hash(password, salt, (err, hashedPassword) => {
           if (err) return next(err);
-          // create jwt for user
-          jwt.sign({
-            id: newUser._id,
-            username: newUser.username,
-            firstName: newUser.firstName,
-            lastName: newUser.lastName,
-            role: newUser.role
-          }, secret, {expiresIn: expiry}, (err, token) => {
-              if (err) return next(err);
-              // send jwt to user
-              res.json({ message: "User registration successful", token })
+          // save password to database
+          newUser.password = hashedPassword;
+          newUser.save((err, savedUser) => {
+            if (err) return next(err);
+            // create jwt for user
+            let token = createToken(newUser);
+            if (!token) return next({ status: 500, message: "Sorry, Authentication Failed. Please log-in." })
+            // send jwt to user
+            return res.json({ message: "User registration successful", token })
           })
         })
       })
     })
-
-    });
-  })
+  });
 }
 
 exports.loginUser = (req, res, next) => {
@@ -57,17 +48,10 @@ exports.loginUser = (req, res, next) => {
       if (!isMatch) return next({ status: 401, message: "Invalid Password" });
 
       // create a token
-      jwt.sign({
-        id: foundUser._id,
-        username: foundUser.username,
-        firstName: foundUser.firstName,
-        lastName: foundUser.lastName,
-        role: foundUser.role
-      }, secret, { expiresIn: expiry }, (err, token) => {
-        if (err) return next(err);
-          // send token to user
-          res.json({ message: "User logged-in", token });
-      });
+      let token = createToken(foundUser);
+      if (!token) return next({ status:500, message: "Sorry, authentication failed. Try again." })
+      // send token to user
+      res.json({ message: "User logged-in", token });
 
     });
 
