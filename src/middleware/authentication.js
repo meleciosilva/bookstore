@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
-const secret = "suPErSecuRESEcrEt"
+const secret = process.env.JWT_SECRET;
+const { decodeToken } = require("../services/jwtService");
 
 const authenticateUser = (req, res, next) => {
   // check if there is an authorization token
@@ -8,15 +9,14 @@ const authenticateUser = (req, res, next) => {
   if (splittedHeader[0] !== "Bearer") return next({ status: 401, message: "Token must be formatted correctly: 'Bearer <token>'" });
 
   let token = splittedHeader[1];
-  jwt.verify(token, secret, (err, decodedToken) => {
-    if (!decodedToken) return next({ status: 401, message: "Invalid authorization token. Please log-in." });
-    if (err) return next({ status: 500, message: err });
-    console.log(decodedToken);
-    req.user = decodedToken;
-    return next();
-  });
-
   // decode token
+  let decodedToken = decodeToken(token);
+
+  if (!decodedToken) return next({ status: 401, message: "Invalid authorization token. Please log-in." });
+  req.user = decodedToken;
+  return next();
+
+
   // check if valid
   // allow user to continue with request
 }
